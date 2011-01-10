@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+	showStatusBar="false"
+	applicationComplete="init()" viewSourceURL="srcview/index.html">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import air.update.events.UpdateEvent;
+			
+			import mx.managers.DragManager;
+			import mx.controls.Alert;
+			import air.update.events.DownloadErrorEvent;
+			import air.update.ApplicationUpdaterUI;
+			import air.update.events.UpdateEvent;
+			
+			import flash.data.SQLConnection;
+			import flash.events.SQLErrorEvent;
+			import flash.events.SQLEvent;
+			import flash.filesystem.File;
+			
+			// Globals
+			private var conn:SQLConnection = new SQLConnection();
+			private var dbFile:File = File.applicationStorageDirectory.resolvePath("oksampler.db");
+			private var appUpdater:ApplicationUpdaterUI = new ApplicationUpdaterUI();
+			private var soundsPath:String = "assets/default_sounds/";
+			public var soundFiles:Array = new Array();
+			private var loopRunning:Boolean = false;
+			private var soundChannel:SoundChannel = new SoundChannel();
+						
+			private function createDatabase():void
+			{				
+				var createStmt:SQLStatement = new SQLStatement();
+				createStmt.addEventListener(SQLEvent.RESULT, createResult);
+				createStmt.sqlConnection = conn;
+				var sql:String = "CREATE TABLE IF NOT EXISTS sounds (id INTEGER PRIMARY KEY AUTOINCREMENT, button TEXT, url TEXT)";
+				createStmt.text = sql;
+				createStmt.execute();
+			}
+			
+			private function saveState():void
+			{
+				dropTable();
+				createDatabase();
+				insertRecord("1", soundFiles["1"]);
+				insertRecord("2", soundFiles["2"]);
+				insertRecord("3", soundFiles["3"]);
+				insertRecord("4", soundFiles["4"]);
+				insertRecord("5", soundFiles["5"]);
+				insertRecord("q", soundFiles["q"]);
+				insertRecord("w", soundFiles["w"]);
+				insertRecord("e", soundFiles["e"]);
+				insertRecord("r", soundFiles["r"]);
+				insertRecord("t", soundFiles["t"]);
+				insertRecord("a", soundFiles["a"]);
+				insertRecord("s", soundFiles["s"]);
+				insertRecord("d", soundFiles["d"]);
+				insertRecord("f", soundFiles["f"]);
+				insertRecord("g", soundFiles["g"]);
+				insertRecord("z", soundFiles["z"]);
+				insertRecord("x", soundFiles["x"]);
+				insertRecord("c", soundFiles["c"]);
+				insertRecord("v", soundFiles["v"]);
+				insertRecord("b", soundFiles["b"]);
+				insertRecord("6", soundFiles["6"]);
+				insertRecord("7", soundFiles["7"]);
+				insertRecord("8", soundFiles["8"]);
+				insertRecord("9", soundFiles["9"]);
+				insertRecord("0", soundFiles["0"]);
+				insertRecord("loop", soundFiles["loop"]);
+			}
+			
+			private function insertRecord(k:String, v:String):void
+			{
+				var insertStmt:SQLStatement = new SQLStatement();
+				insertStmt.addEventListener(SQLEvent.RESULT, createResult);
+				insertStmt.addEventListener(SQLErrorEvent.ERROR, errorHandler);
+				insertStmt.sqlConnection = conn;
+				var sql:String = "INSERT INTO sounds ('button', 'url') VALUES ('"+ k +"', '"+ v +"')";
+				insertStmt.text = sql;
+				insertStmt.execute();
+			}
+			
+			private function dropTable():void
+			{
+				var dropTable:SQLStatement = new SQLStatement();
+				dropTable.addEventListener(SQLEvent.RESULT, createResult);
+				dropTable.addEventListener(SQLErrorEvent.ERROR, errorHandler);
+				dropTable.sqlConnection = conn;
+				var sql:String = "DROP TABLE sounds";
+				dropTable.text = sql;
+				dropTable.execute();
+			}
+			
+			private function resetState():void
+			{
+				setDefaultSoundVars();
+				saveState();
+				btn_1.label = '1';
+				btn_2.label = '2';
+				btn_3.label = '3';
+				btn_4.label = '4';
+				btn_5.label = '5';
+				btn_q.label = 'q';
+				btn_w.label = 'w';
+				btn_e.label = 'e';
+				btn_r.label = 'r';
+				btn_t.label = 't';
+				btn_a.label = 'a';
+				btn_s.label = 's';
+				btn_d.label = 'd';
+				btn_f.label = 'f';
+				btn_g.label = 'g';
+				btn_z.label = 'z';
+				btn_x.label = 'x';
+				btn_c.label = 'c';
+				btn_v.label = 'v';
+				btn_b.label = 'b';
+				btn_6.label = '6';
+				btn_7.label = '7';
+				btn_8.label = '8';
+				btn_9.label = '9';
+				btn_0.label = '0';
+				btn_loop.label = "Drop-a-Loop";
+				
+				trace("reset");
+			}
+			
+			private function createResult(event:SQLEvent):void
+			{
+				trace("DB: " + event.type);
+			}
+			
+			private function openHandler(event:SQLEvent):void 
+			{
+				trace("DB: " + event.type);
+			}
+			
+			private function errorHandler(event:SQLErrorEvent):void 
+			{
+				trace("Error message:", event.error.message); 
+				trace("Details:", event.error.details); 
+			}
+			
+			public function setDefaultSoundVars():void
+			{
+				// Default sounds
+				soundFiles["1"] = soundsPath + "1.mp3";
+				soundFiles["2"] = soundsPath + "2.mp3";
+				soundFiles["3"] = soundsPath + "3.mp3";
+				soundFiles["4"] = soundsPath + "4.mp3";
+				soundFiles["5"] = soundsPath + "5.mp3";
+				soundFiles["q"] = soundsPath + "q.mp3";
+				soundFiles["w"] = soundsPath + "w.mp3";
+				soundFiles["e"] = soundsPath + "e.mp3";
+				soundFiles["r"] = soundsPath + "r.mp3";
+				soundFiles["t"] = soundsPath + "t.mp3";
+				soundFiles["a"] = soundsPath + "a.mp3";
+				soundFiles["s"] = soundsPath + "s.mp3";
+				soundFiles["d"] = soundsPath + "d.mp3";
+				soundFiles["f"] = soundsPath + "f.mp3";
+				soundFiles["g"] = soundsPath + "g.mp3";
+				soundFiles["z"] = soundsPath + "z.mp3";
+				soundFiles["x"] = soundsPath + "x.mp3";
+				soundFiles["c"] = soundsPath + "c.mp3";
+				soundFiles["v"] = soundsPath + "v.mp3";
+				soundFiles["b"] = soundsPath + "b.mp3";
+				soundFiles["6"] = soundsPath + "6.mp3";
+				soundFiles["7"] = soundsPath + "7.mp3";
+				soundFiles["8"] = soundsPath + "8.mp3";
+				soundFiles["9"] = soundsPath + "9.mp3";
+				soundFiles["0"] = soundsPath + "0.mp3";
+				soundFiles["loop"] = soundsPath + "loop.mp3";
+			}
+			
+			private var selectStmt:SQLStatement = new SQLStatement();
+			private function loadSavedState():void
+			{
+				selectStmt.addEventListener(SQLEvent.RESULT, resutlSelect);
+				selectStmt.addEventListener(SQLErrorEvent.ERROR, errorSelect);
+				selectStmt.sqlConnection = conn;
+				var sql:String = "SELECT button, url FROM sounds";
+				selectStmt.text = sql;
+				selectStmt.execute();
+			}
+			
+			private function resutlSelect(e:SQLEvent):void
+			{
+				var result:SQLResult = selectStmt.getResult();
+				if(result.data != null) {
+					var numResults:int = result.data.length; 
+					for (var i:int = 0; i < numResults; i++) 
+	    			{ 
+				        var row:Object = result.data[i];
+				        setupButton(row.button, row.url);
+	    			} 
+				} else {
+					setDefaultSoundVars();
+				}
+
+			}
+			
+			private function setupButton(b:String, url:String):void
+			{
+				soundFiles[b] = url;
+				var btnVar:String = "btn_" + b;
+				
+				if(url == soundsPath + "loop.mp3"){
+					this[btnVar].label = "Drop-a-Loop";
+				} else if(url == soundsPath+b+".mp3") {
+					this[btnVar].label = b;
+				} else {
+					this[btnVar].label = b + generateNameFromURL(url);
+					trace("loop found");
+				}
+			}
+			
+			private function generateNameFromURL(url:String):String
+			{
+				var newName:Array = url.split("/");
+				newName = newName[newName.length-1].split(".");
+				return " - " + newName[0].toString();
+			}
+			
+			private function errorSelect(e:SQLErrorEvent):void
+			{
+				trace(e.toString());
+				setDefaultSoundVars();
+				createDatabase();
+			}
+			
+			private function initialOpen(e:SQLEvent):void
+			{
+				loadSavedState();
+				trace("try to load");
+			}
+			
+			private function init():void
+			{	
+				
+				conn.openAsync(dbFile);
+				conn.addEventListener(SQLEvent.OPEN, initialOpen);
+				conn.addEventListener(SQLErrorEvent.ERROR, errorHandler);
+				
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyManager);
+				
+				// updater stuff
+			    appUpdater.updateURL = "http://24veces.com/ok-sampler/updateDescriptor.xml";
+			    appUpdater.addEventListener(UpdateEvent.INITIALIZED, onUpdate);
+			    appUpdater.addEventListener(ErrorEvent.ERROR, onError);
+			    appUpdater.isCheckForUpdateVisible = false;
+			    appUpdater.isFileUpdateVisible = false;
+			    appUpdater.isInstallUpdateVisible = true;
+			    appUpdater.initialize();
+
+			}
+			
+			private function onUpdate(event:UpdateEvent):void
+			{
+				appUpdater.checkNow();
+			}
+			
+			private function onError(event:ErrorEvent):void
+			{
+            	Alert.show('Contact us info@24veces.com and report this\n\n' + event.toString(), 'Updater Error');
+			}
+			
+			private function keyManager(e:KeyboardEvent):void
+			{
+					
+				switch(e.charCode) {
+					case 49:
+						keyTrigger("1");
+						break;
+					case 50:
+						keyTrigger("2");
+						break;
+					case 51:
+						keyTrigger("3");
+						break;
+					case 52:
+						keyTrigger("4");
+						break;
+					case 53:
+						keyTrigger("5");
+						break;
+					case 113:
+						keyTrigger("q");
+						break;
+					case 119:
+						keyTrigger("w");
+						break;
+					case 101:
+						keyTrigger("e");
+						break;
+					case 114:
+						keyTrigger("r");
+						break;
+					case 116:
+						keyTrigger("t");
+						break;
+					case 97:
+						keyTrigger("a");
+						break;
+					case 115:
+						keyTrigger("s");
+						break;
+					case 100:
+						keyTrigger("d");
+						break;
+					case 102:
+						keyTrigger("f");
+						break;
+					case 103:
+						keyTrigger("g");
+						break;
+					case 122:
+						keyTrigger("z");
+						break;
+					case 120:
+						keyTrigger("x");
+						break;
+					case 99:
+						keyTrigger("c");
+						break;
+					case 118:
+						keyTrigger("v");
+						break;
+					case 98:
+						keyTrigger("b");
+						break;
+					case 54:
+						keyTrigger("6");
+						break;
+					case 55:
+						keyTrigger("7");
+						break;
+					case 56:
+						keyTrigger("8");
+						break;
+					case 57:
+						keyTrigger("9");
+						break;
+					case 48:
+						keyTrigger("0");
+						break;
+				}
+			}
+			
+			private function keyTrigger(k:String):void
+			{
+				var url:String = soundFiles[k];
+				trace(url);
+				var snd:Sound = new Sound(new URLRequest(url));
+				snd.addEventListener(IOErrorEvent.IO_ERROR, sndError);
+				snd.play();
+			}
+			
+			private function sndError(e:ErrorEvent):void
+			{
+				Alert.show("The sound file does not exists.", "Error");
+			}
+			
+			private function onEnter(e:NativeDragEvent, b:String):void
+			{
+				var btnVar:String = "btn_" + b;
+				NativeDragManager.acceptDragDrop(e.currentTarget as InteractiveObject);
+				this[btnVar].emphasized = true;
+			}
+			
+			private function onLeave(e:NativeDragEvent, b:String):void
+			{
+				var btnVar:String = "btn_" + b;
+				this[btnVar].emphasized = false;
+			}
+			
+			private function dropHandler(e:NativeDragEvent, k:String):void
+			{
+				var btnVar:String = "btn_" + k;
+				var newUrl : String = e.clipboard.getData(ClipboardFormats.URL_FORMAT).toString();
+				this[btnVar].label = k + generateNameFromURL(newUrl);
+				this[btnVar].emphasized = false;
+				soundFiles[k] = newUrl;
+			}
+			
+			private function loopToggler():void
+			{
+				if(!loopRunning) {
+					var loopSnd:Sound = new Sound(new URLRequest(soundFiles["loop"]));
+					soundChannel = loopSnd.play(0,999999);
+					loopRunning = true;
+				} else {
+					soundChannel.stop();
+					loopRunning = false;
+				}
+			}
+			
+			private function open24veces():void
+			{
+				var url:String = "http://24veces.com/ok-sampler"; 
+				var	urlReq:URLRequest = new URLRequest(url);
+				navigateToURL(urlReq);
+				Alert.show('Developed by 24veces\nhttp://24veces.com', 'ok sampler v0.1');
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Label click="open24veces()" x="10" y="10" text="ok" fontSize="21" fontWeight="bold"/>
+	<mx:Label click="open24veces()" x="39" y="10" text="sampler" fontSize="21" fontWeight="bold" color="#FF3200"/>
+	<mx:Button label="1" click="keyTrigger('1')" nativeDragEnter="onEnter(event, '1')" nativeDragDrop="dropHandler(event, '1')" nativeDragExit="onLeave(event, '1')" left="10" top="56" width="115" height="100" id="btn_1"/>
+	<mx:Button label="2" click="keyTrigger('2')" nativeDragEnter="onEnter(event, '2')" nativeDragDrop="dropHandler(event, '2')" nativeDragExit="onLeave(event, '2')" left="133" top="56" width="115" height="100" id="btn_2"/>
+	<mx:Button label="3" click="keyTrigger('3')" nativeDragEnter="onEnter(event, '3')" nativeDragDrop="dropHandler(event, '3')" nativeDragExit="onLeave(event, '3')" left="256" top="56" width="115" height="100" id="btn_3"/>
+	<mx:Button label="4" click="keyTrigger('4')" nativeDragEnter="onEnter(event, '4')" nativeDragDrop="dropHandler(event, '4')" nativeDragExit="onLeave(event, '4')" left="379" top="56" width="115" height="100" id="btn_4"/>
+	<mx:Button label="5" click="keyTrigger('5')" nativeDragEnter="onEnter(event, '5')" nativeDragDrop="dropHandler(event, '5')" nativeDragExit="onLeave(event, '5')" left="502" top="56" width="115" height="100" id="btn_5"/>
+	<mx:Button label="Q" click="keyTrigger('q')" nativeDragEnter="onEnter(event, 'q')" nativeDragDrop="dropHandler(event, 'q')" nativeDragExit="onLeave(event, 'q')" left="10" top="164" width="115" height="100" id="btn_q"/>
+	<mx:Button label="W" click="keyTrigger('w')" nativeDragEnter="onEnter(event, 'w')" nativeDragDrop="dropHandler(event, 'w')" nativeDragExit="onLeave(event, 'w')" left="133" top="164" width="115" height="100" id="btn_w"/>
+	<mx:Button label="E" click="keyTrigger('e')" nativeDragEnter="onEnter(event, 'e')" nativeDragDrop="dropHandler(event, 'e')" nativeDragExit="onLeave(event, 'e')" left="256" top="164" width="115" height="100" id="btn_e"/>
+	<mx:Button label="R" click="keyTrigger('r')" nativeDragEnter="onEnter(event, 'r')" nativeDragDrop="dropHandler(event, 'r')" nativeDragExit="onLeave(event, 'r')" left="379" top="164" width="115" height="100" id="btn_r"/>
+	<mx:Button label="T" click="keyTrigger('t')" nativeDragEnter="onEnter(event, 't')" nativeDragDrop="dropHandler(event, 't')" nativeDragExit="onLeave(event, 't')" left="502" top="164" width="115" height="100" id="btn_t"/>
+	<mx:Button label="A" click="keyTrigger('a')" nativeDragEnter="onEnter(event, 'a')" nativeDragDrop="dropHandler(event, 'a')" nativeDragExit="onLeave(event, 'a')" left="10" top="272" width="115" height="100" id="btn_a"/>
+	<mx:Button label="S" click="keyTrigger('s')" nativeDragEnter="onEnter(event, 's')" nativeDragDrop="dropHandler(event, 's')" nativeDragExit="onLeave(event, 's')" left="133" top="272" width="115" height="100" id="btn_s"/>
+	<mx:Button label="D" click="keyTrigger('d')" nativeDragEnter="onEnter(event, 'd')" nativeDragDrop="dropHandler(event, 'd')" nativeDragExit="onLeave(event, 'd')" left="256" top="272" width="115" height="100" id="btn_d"/>
+	<mx:Button label="F" click="keyTrigger('f')" nativeDragEnter="onEnter(event, 'f')" nativeDragDrop="dropHandler(event, 'f')" nativeDragExit="onLeave(event, 'f')" left="379" top="272" width="115" height="100" id="btn_f"/>
+	<mx:Button label="G" click="keyTrigger('g')" nativeDragEnter="onEnter(event, 'g')" nativeDragDrop="dropHandler(event, 'g')" nativeDragExit="onLeave(event, 'g')" left="502" top="272" width="115" height="100" id="btn_g"/>
+	<mx:Button label="Z" click="keyTrigger('z')" nativeDragEnter="onEnter(event, 'z')" nativeDragDrop="dropHandler(event, 'z')" nativeDragExit="onLeave(event, 'z')" left="10" top="380" width="115" height="100" id="btn_z"/>
+	<mx:Button label="X" click="keyTrigger('x')" nativeDragEnter="onEnter(event, 'x')" nativeDragDrop="dropHandler(event, 'x')" nativeDragExit="onLeave(event, 'x')" left="133" top="380" width="115" height="100" id="btn_x"/>
+	<mx:Button label="C" click="keyTrigger('c')" nativeDragEnter="onEnter(event, 'c')" nativeDragDrop="dropHandler(event, 'c')" nativeDragExit="onLeave(event, 'c')" left="256" top="380" width="115" height="100" id="btn_c"/>
+	<mx:Button label="V" click="keyTrigger('v')" nativeDragEnter="onEnter(event, 'v')" nativeDragDrop="dropHandler(event, 'v')" nativeDragExit="onLeave(event, 'v')" left="379" top="380" width="115" height="100" id="btn_v"/>
+	<mx:Button label="B" click="keyTrigger('b')" nativeDragEnter="onEnter(event, 'b')" nativeDragDrop="dropHandler(event, 'b')" nativeDragExit="onLeave(event, 'b')" left="502" top="380" width="115" height="100" id="btn_b"/>
+	<mx:Button label="6" click="keyTrigger('6')" nativeDragEnter="onEnter(event, '6')" nativeDragDrop="dropHandler(event, '6')" nativeDragExit="onLeave(event, '6')" left="10" top="488" width="115" height="100" id="btn_6"/>
+	<mx:Button label="7" click="keyTrigger('7')" nativeDragEnter="onEnter(event, '7')" nativeDragDrop="dropHandler(event, '7')" nativeDragExit="onLeave(event, '7')" left="133" top="488" width="115" height="100" id="btn_7"/>
+	<mx:Button label="8" click="keyTrigger('8')" nativeDragEnter="onEnter(event, '8')" nativeDragDrop="dropHandler(event, '8')" nativeDragExit="onLeave(event, '8')" left="256" top="488" width="115" height="100" id="btn_8"/>
+	<mx:Button label="9" click="keyTrigger('9')" nativeDragEnter="onEnter(event, '9')" nativeDragDrop="dropHandler(event, '9')" nativeDragExit="onLeave(event, '9')" left="379" top="488" width="115" height="100" id="btn_9"/>
+	<mx:Button label="0" click="keyTrigger('0')" nativeDragEnter="onEnter(event, '0')" nativeDragDrop="dropHandler(event, '0')" nativeDragExit="onLeave(event, '0')" left="502" top="488" width="115" height="100" id="btn_0"/>
+	<mx:Button label="Drop-a-Loop" click="loopToggler()" nativeDragEnter="onEnter(event, 'loop')" nativeDragDrop="dropHandler(event, 'loop')" nativeDragExit="onLeave(event, 'loop')" width="238" height="38" left="379" top="11" id="btn_loop" />
+	<mx:Button label="Save" click="saveState()" nativeDragEnter="onEnter(event, 'loop')" nativeDragDrop="dropHandler(event, 'loop')" nativeDragExit="onLeave(event, 'loop')" width="53" height="38" left="256" top="11" id="btn_save"/>
+	<mx:Button label="Reset" click="resetState()" nativeDragEnter="onEnter(event, 'loop')" nativeDragDrop="dropHandler(event, 'loop')" nativeDragExit="onLeave(event, 'loop')" width="60" height="38" left="311" top="11" id="btn_reset" />
+	<mx:ProgressBar height="5" mode="manual" left="0" top="-1" enabled="true" label="" right="0" id="pBar" visible="false" minimum="0" maximum="100"/>
+</mx:WindowedApplication>
